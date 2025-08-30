@@ -3,7 +3,7 @@ import ChatHeader from "../components/ChatHeader";
 import ChatBox from "../components/ChatBox";
 import ChatInput from "../components/ChatInput";
 import SideBar from "../components/SideBar";
-import { askGemini } from "../api/gemini";
+import { askGeminiStream } from "../api/gemini";
 import { useTheme } from "../Context/ThemeContext";
 import React from "react";
 export default function Home() {
@@ -75,14 +75,13 @@ export default function Home() {
     }
   };
 
+  // Home.jsx handleSend
   const handleSend = async () => {
     if (!question.trim() || !currentChatId) return;
-
-    // Save current question and clear input immediately
     const userQuestion = question;
     setQuestion("");
 
-    // Add user's message
+    // Add user message
     const updatedMessages = [
       ...currentChat.messages,
       { role: "user", text: userQuestion },
@@ -95,22 +94,29 @@ export default function Home() {
       )
     );
 
-    // Call AI
-    setLoading(true);
-    const answer = await askGemini(userQuestion);
-
-    // Add AI response
-    const updatedMessagesWithAI = [
-      ...updatedMessages,
-      { role: "ai", text: answer },
-    ];
+    // Add placeholder AI message
+    let aiMessage = { role: "ai", text: "" };
     setChats((prev) =>
       prev.map((chat) =>
         chat.id === currentChatId
-          ? { ...chat, messages: updatedMessagesWithAI }
+          ? { ...chat, messages: [...updatedMessages, aiMessage] }
           : chat
       )
     );
+
+    setLoading(true);
+
+    // Stream AI response in batches
+    await askGeminiStream(userQuestion, (chunk) => {
+      aiMessage.text += chunk;
+      setChats((prev) =>
+        prev.map((chat) =>
+          chat.id === currentChatId
+            ? { ...chat, messages: [...updatedMessages, { ...aiMessage }] }
+            : chat
+        )
+      );
+    });
 
     setLoading(false);
   };

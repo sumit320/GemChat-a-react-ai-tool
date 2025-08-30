@@ -13,7 +13,6 @@ const ChatBox = ({ role, text, isLoading }) => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Parse markdown-style headings and split by lines
   const parseText = (txt) => {
     const lines = txt.split("\n");
     return lines.map((line) => {
@@ -22,23 +21,20 @@ const ChatBox = ({ role, text, isLoading }) => {
       let lastIndex = 0;
       let match;
       while ((match = regex.exec(line)) !== null) {
-        if (match.index > lastIndex) {
+        if (match.index > lastIndex)
           parts.push({
             type: "normal",
             text: line.slice(lastIndex, match.index),
           });
-        }
         const token = match[0];
-        if (token.startsWith("**")) {
+        if (token.startsWith("**"))
           parts.push({ type: "bold", text: token.replace(/\*\*/g, "") });
-        } else if (token.startsWith("*")) {
+        else if (token.startsWith("*"))
           parts.push({ type: "medium", text: token.replace(/\*/g, "") });
-        }
         lastIndex = match.index + token.length;
       }
-      if (lastIndex < line.length) {
+      if (lastIndex < line.length)
         parts.push({ type: "normal", text: line.slice(lastIndex) });
-      }
       return parts;
     });
   };
@@ -80,25 +76,32 @@ const ChatBox = ({ role, text, isLoading }) => {
           </button>
         )}
 
-        {/* Chat text */}
-        <div className="pr-12">
-          {isLoading
-            ? "💭 AI is thinking..."
-            : parsedText.map((line, i) => (
-                <p key={i} className="mb-1">
-                  {line.map((part, j) => {
-                    if (part.type === "bold")
-                      return <strong key={j}>{part.text}</strong>;
-                    if (part.type === "medium")
-                      return (
-                        <span key={j} className="font-semibold">
-                          {part.text}
-                        </span>
-                      );
-                    return <span key={j}>{part.text}</span>;
-                  })}
-                </p>
-              ))}
+        {/* Chat text / typing indicator */}
+        <div className="pr-12 min-h-[1.5rem]">
+          {role === "ai" && isLoading ? (
+            <span className="flex gap-1 text-gray-400 dark:text-zinc-400">
+              💭 AI is thinking
+              <span className="animate-bounce">.</span>
+              <span className="animate-bounce delay-150">.</span>
+              <span className="animate-bounce delay-300">.</span>
+            </span>
+          ) : (
+            parsedText.map((line, i) => (
+              <p key={i} className="mb-1">
+                {line.map((part, j) => {
+                  if (part.type === "bold")
+                    return <strong key={j}>{part.text}</strong>;
+                  if (part.type === "medium")
+                    return (
+                      <span key={j} className="font-semibold">
+                        {part.text}
+                      </span>
+                    );
+                  return <span key={j}>{part.text}</span>;
+                })}
+              </p>
+            ))
+          )}
         </div>
       </div>
     </div>
