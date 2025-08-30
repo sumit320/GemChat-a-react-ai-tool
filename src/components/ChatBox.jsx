@@ -7,12 +7,14 @@ const ChatBox = ({ role, text, isLoading }) => {
   const isDark = theme === "dark";
   const [copied, setCopied] = useState(false);
 
+  // Copy AI response
   const handleCopy = () => {
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Parse markdown-style **bold** and *medium* text
   const parseText = (txt) => {
     const lines = txt.split("\n");
     return lines.map((line) => {
@@ -21,27 +23,33 @@ const ChatBox = ({ role, text, isLoading }) => {
       let lastIndex = 0;
       let match;
       while ((match = regex.exec(line)) !== null) {
-        if (match.index > lastIndex)
+        if (match.index > lastIndex) {
           parts.push({
             type: "normal",
             text: line.slice(lastIndex, match.index),
           });
+        }
         const token = match[0];
-        if (token.startsWith("**"))
+        if (token.startsWith("**")) {
           parts.push({ type: "bold", text: token.replace(/\*\*/g, "") });
-        else if (token.startsWith("*"))
+        } else if (token.startsWith("*")) {
           parts.push({ type: "medium", text: token.replace(/\*/g, "") });
+        }
         lastIndex = match.index + token.length;
       }
-      if (lastIndex < line.length)
+      if (lastIndex < line.length) {
         parts.push({ type: "normal", text: line.slice(lastIndex) });
+      }
       return parts;
     });
   };
 
+  // Ensure parsedText is always an array of arrays
   const parsedText =
-    role === "ai" && !isLoading
-      ? parseText(text)
+    role === "ai"
+      ? !isLoading
+        ? parseText(text)
+        : [[{ type: "normal", text: "💭 AI is thinking..." }]]
       : [[{ type: "normal", text }]];
 
   return (
@@ -51,8 +59,7 @@ const ChatBox = ({ role, text, isLoading }) => {
       }`}
     >
       <div
-        className={`px-4 py-3 rounded-2xl shadow-md transition-all duration-300 break-words 
-        inline-block min-w-[60px] max-w-[80%] relative
+        className={`px-4 py-3 rounded-2xl shadow-md break-words inline-block min-w-[60px] max-w-[80%] relative
         ${
           role === "user"
             ? "bg-blue-600 text-white animate-slideInRight"
@@ -61,7 +68,7 @@ const ChatBox = ({ role, text, isLoading }) => {
             : "bg-gray-200 text-gray-900 animate-slideInLeft"
         }`}
       >
-        {/* Copy button */}
+        {/* Copy button only for AI when not loading */}
         {role === "ai" && !isLoading && (
           <button
             onClick={handleCopy}
@@ -76,32 +83,30 @@ const ChatBox = ({ role, text, isLoading }) => {
           </button>
         )}
 
-        {/* Chat text / typing indicator */}
-        <div className="pr-12 min-h-[1.5rem]">
-          {role === "ai" && isLoading ? (
-            <span className="flex gap-1 text-gray-400 dark:text-zinc-400">
-              💭 AI is thinking
-              <span className="animate-bounce">.</span>
-              <span className="animate-bounce delay-150">.</span>
-              <span className="animate-bounce delay-300">.</span>
-            </span>
-          ) : (
-            parsedText.map((line, i) => (
-              <p key={i} className="mb-1">
-                {line.map((part, j) => {
-                  if (part.type === "bold")
-                    return <strong key={j}>{part.text}</strong>;
-                  if (part.type === "medium")
-                    return (
-                      <span key={j} className="font-semibold">
-                        {part.text}
-                      </span>
-                    );
-                  return <span key={j}>{part.text}</span>;
-                })}
-              </p>
-            ))
-          )}
+        {/* Chat text */}
+        <div className="pr-12">
+          {parsedText.map((line, i) => (
+            <p
+              key={i}
+              className={`mb-1 ${
+                role === "ai" && isLoading
+                  ? "italic text-gray-400 dark:text-zinc-400"
+                  : ""
+              }`}
+            >
+              {line.map((part, j) => {
+                if (part.type === "bold")
+                  return <strong key={j}>{part.text}</strong>;
+                if (part.type === "medium")
+                  return (
+                    <span key={j} className="font-semibold">
+                      {part.text}
+                    </span>
+                  );
+                return <span key={j}>{part.text}</span>;
+              })}
+            </p>
+          ))}
         </div>
       </div>
     </div>

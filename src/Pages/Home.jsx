@@ -1,11 +1,11 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import ChatHeader from "../components/ChatHeader";
 import ChatBox from "../components/ChatBox";
 import ChatInput from "../components/ChatInput";
 import SideBar from "../components/SideBar";
 import { askGeminiStream } from "../api/gemini";
 import { useTheme } from "../Context/ThemeContext";
-import React from "react";
+
 export default function Home() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -55,18 +55,21 @@ export default function Home() {
     messages: [],
   };
 
+  // New chat
   const handleNewChat = () => {
     const newChat = { id: Date.now(), messages: [] };
     setChats((prev) => [newChat, ...prev]);
     setCurrentChatId(newChat.id);
-    setIsSidebarOpen(false); // close sidebar on mobile
+    setIsSidebarOpen(false);
   };
 
+  // Select chat
   const handleSelectChat = (id) => {
     setCurrentChatId(id);
-    setIsSidebarOpen(false); // close sidebar on mobile
+    setIsSidebarOpen(false);
   };
 
+  // Delete chat
   const handleDeleteChat = (id) => {
     setChats((prev) => prev.filter((chat) => chat.id !== id));
     if (id === currentChatId) {
@@ -75,9 +78,10 @@ export default function Home() {
     }
   };
 
-  // Home.jsx handleSend
+  // Send message
   const handleSend = async () => {
     if (!question.trim() || !currentChatId) return;
+
     const userQuestion = question;
     setQuestion("");
 
@@ -94,7 +98,7 @@ export default function Home() {
       )
     );
 
-    // Add placeholder AI message
+    // Placeholder AI message
     let aiMessage = { role: "ai", text: "" };
     setChats((prev) =>
       prev.map((chat) =>
@@ -106,7 +110,7 @@ export default function Home() {
 
     setLoading(true);
 
-    // Stream AI response in batches
+    // Stream AI response
     await askGeminiStream(userQuestion, (chunk) => {
       aiMessage.text += chunk;
       setChats((prev) =>
@@ -177,17 +181,15 @@ export default function Home() {
         </div>
 
         {/* Chat messages container */}
-        <div
-          className={`flex-1 overflow-y-auto px-4 sm:px-8 py-4 space-y-4 ${
-            "h-[60vh] sm:h-auto" // mobile: 60% of viewport height, desktop auto
-          }`}
-        >
+        <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-4 space-y-4 h-[60vh] sm:h-auto">
           {currentChat.messages.map((msg, i) => (
-            <ChatBox key={i} role={msg.role} text={msg.text} />
+            <ChatBox
+              key={i}
+              role={msg.role}
+              text={msg.text}
+              isLoading={loading && msg.role === "ai" && !msg.text}
+            />
           ))}
-          {loading && (
-            <ChatBox role="ai" text="AI is thinking..." isLoading={true} />
-          )}
           <div ref={messagesEndRef} />
         </div>
 
